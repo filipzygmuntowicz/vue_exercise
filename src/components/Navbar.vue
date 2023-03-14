@@ -4,13 +4,21 @@
         <div class="container-fluid">
             <!--<a class="navbar-brand" href="#">Stronka</a>-->
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                <li v-for="(page, index) in pages" :key="index">
-                    <navbar-link
-                        :page = "page"
-                        :isActive = "activePage === index"
-                        @click.prevent="navLinkClick(index)"
-                    ></navbar-link>
-                </li>
+            <navbar-link
+                v-for="(page, index) in publishedPages" :key="index"
+                :page = "page"
+                :index = "index"
+            ></navbar-link>
+
+            <li>
+                <router-link 
+                    active-class="active emphasize"
+                    to="/pages"
+                    class="nav-link"
+                    aria-current="page"
+                    >Pages
+                </router-link>
+            </li>
             </ul>
             <form class="d-flex">
                 <button 
@@ -26,14 +34,32 @@
 <script>
 import NavbarLink from './NavbarLink.vue'
     export default {
+            created() {
+                this.getThemeSetting()
+                this.pages = this.$pages.getAllPages()
+                this.$bus.$on('page-updated', () => {
+                    this.pages = [...this.$pages.getAllPages()]
+                })
+                this.$bus.$on('page-created', () => {
+                    this.pages = [...this.$pages.getAllPages()]
+                })
+                this.$bus.$on('page-deleted', () => {
+                    this.pages = [...this.$pages.getAllPages()]
+                })
+            },
+            inject: ['$pages', '$bus'],
+            computed: {
+                publishedPages() {
+                    return  this.pages.filter(p => p.published) 
+                }
+            },
             components: {
                 NavbarLink
             },
-            props: ['pages', 'activePage', 'navLinkClick'],
             data() {
                 return {
                     theme: 'light',
-                    activePage: 0
+                    pages: []
                 }
             },
             methods: {
@@ -42,7 +68,23 @@ import NavbarLink from './NavbarLink.vue'
                 },
                 changeTheme() {
                     this.theme == 'light' ? this.theme = 'dark' : this.theme = 'light'
+                    this.storeThemeSetting()
+                },
+                storeThemeSetting() {
+                    localStorage.setItem('theme', this.theme)
+                },
+                getThemeSetting() {
+                    let theme = localStorage.getItem('theme', this.theme)
+
+                    if (theme) {
+                        this.theme = theme
+                    }
                 }
             }
         }
 </script>
+<style scoped>
+.emphasize {
+    text-decoration: underline !important;
+}
+</style>
